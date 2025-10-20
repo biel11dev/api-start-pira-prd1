@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Balance {
+  id               Int       @id @default(autoincrement())
+  date             String
+  balance          Float
+  balancefim       Float?
+  lucro            Float?
+  cartao           Float?
+  dinheiro         Float?
+  cartaofimcaixa   Float?
+  dinheirofimcaixa Float?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime?
+}
+
+model Client {
+  id        Int        @id @default(autoincrement())
+  name      String
+  totalDebt Float
+  createdAt DateTime   @default(now())
+  updatedAt DateTime @updatedAt
+  Payment   Payment[]
+  Purchase  Purchase[]
+}
+
+model DailyReading {
+  id        Int      @id @default(autoincrement())
+  date      String
+  value     Float
+  machineId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Machine   Machine  @relation(fields: [machineId], references: [id])
+}
+
+model Despesa {
+  id           Int      @id @default(autoincrement())
+  nomeDespesa  String?
+  valorDespesa Float?
+  descDespesa  String?
+  date         DateTime
+  DespesaFixa  Boolean
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime? @updatedAt
+}
+
+model Machine {
+  id           Int            @id @default(autoincrement())
+  name         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime? @updatedAt
+  DailyReading DailyReading[]
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  date      String
+  clientId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+  Client    Client   @relation(fields: [clientId], references: [id])
+}
+
+model Category {
+  id             Int         @id @default(autoincrement())
+  name           String
+  parentId       Int?        // Campo para subcategoria
+  parent         Category?   @relation("CategorySubcategories", fields: [parentId], references: [id])
+  subcategories  Category[]  @relation("CategorySubcategories")
+  products       Product[]
+  prod_estoq     Estoque[]
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  name      String
+  quantity  Int
+  unit      String
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+  value     Float
+  valuecusto Float
+}
+
+model Estoque {
+  id        Int      @id @default(autoincrement())
+  name      String
+  quantity  Int
+  unit      String
+  categoria_Id Int?
+  category   Category? @relation(fields: [categoria_Id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+  value     Float
+  valuecusto Float
+}
+
+model Purchase {
+  id        Int      @id @default(autoincrement())
+  product   String
+  quantity  Int
+  total     Float
+  date      String
+  clientId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Client    Client   @relation(fields: [clientId], references: [id])
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  caixa     Boolean?
+  produtos  Boolean?
+  maquinas  Boolean?
+  fiado     Boolean?
+  despesas  Boolean?
+  ponto     Boolean?
+  acessos   Boolean?
+  base_produto Boolean?
+  pdv Boolean?
+  pessoal Boolean?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Employee {
+  id        Int          @id @default(autoincrement())
+  name      String       // Nome do funcionário
+  position  String?      // Cargo do funcionário (opcional)
+  carga     Int          @default(0)
+  createdAt DateTime     @default(now()) // Data de criação do registro
+  points    DailyPoint[] // Relacionamento com os pontos diários
+}
+
+model DailyPoint {
+  id         Int      @id @default(autoincrement())
+  date       DateTime? // Data do ponto
+  entry      DateTime? // Horário de entrada
+  exit       DateTime? // Horário de saída
+  gateOpen   DateTime? // Horário de abertura do portão (opcional)
+  falta      Boolean?  // Falta ou não
+  employeeId Int      // Relacionamento com o funcionário
+  employee   Employee @relation(fields: [employeeId], references: [id])
+}
+
+model CadDespesa {
+  id         Int      @id @default(autoincrement())
+  nomeDespesa String?
+  createdAt DateTime     @default(now()) // Data de criação do registro
+
+}
+
+model MachineWeekValue {
+  id        Int      @id @default(autoincrement())
+  year      Int
+  month     Int
+  week      Int
+  value     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sale {
+  id             Int        @id @default(autoincrement())
+  total          Float
+  paymentMethod  String
+  customerName   String
+  amountReceived Float
+  change         Float
+  date           DateTime
+  items          SaleItem[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model SaleItem {
+  id          Int    @id @default(autoincrement())
+  saleId      Int
+  productId   Int
+  productName String
+  quantity    Int
+  unitPrice   Float
+  total       Float
+  sale        Sale   @relation(fields: [saleId], references: [id])
+}
+
+model UnitEquivalence {
+  id        Int      @id @default(autoincrement())
+  unitName  String   @unique
+  value     Float    // Quantas unidades representa (ex: 1 Maço = 20 Unidades)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DespPessoal{
+  id           Int      @id @default(autoincrement())
+  nomeDespesa  String
+  valorDespesa Float?
+  descDespesa  String?
+  date         DateTime
+  DespesaFixa  Boolean
+  tipoMovimento String  @default("GASTO") // "GASTO" ou "GANHO"
+  categoriaId  Int?
+  categoria    CatDespPessoal? @relation(fields: [categoriaId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime? @updatedAt
+}
+
+model CatDespPessoal{
+  id           Int      @id @default(autoincrement())
+  nomeCategoria  String?
+  createdAt    DateTime @default(now())
+  DespPessoal DespPessoal[]
+}
